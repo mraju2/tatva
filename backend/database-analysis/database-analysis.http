@@ -1,0 +1,6 @@
+@database_analysis_HostAddress = http://localhost:5264
+
+GET {{database_analysis_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
