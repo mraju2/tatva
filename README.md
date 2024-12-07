@@ -1,2 +1,8 @@
 # tatva
-Text-to-SQL-to-data system leveraging LLMs to bridge natural language and database interactions. 
+A system that lets users ask questions in natural language to retrieve data from a database. It uses advanced AI to translate questions into SQL queries, execute them, and return results in a user-friendly format.
+
+
+
+
+
+
