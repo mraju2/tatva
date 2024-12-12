@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Build
+.next/
+out/
+build/
+
+# Static files build
+public/static/*
+
+# Production files
+.env.production
+.env.local
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage/
+
+# Editor/IDE
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Optional: Local environment files (if you don't want to commit them)
+.env
+.local
+.env.development.local
+.env.test.local
+
+# Optional: next-env.d.ts if you want to ignore it
+next-env.d.ts
+
+# Optional: Package lock files if you're using a different package manager
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
