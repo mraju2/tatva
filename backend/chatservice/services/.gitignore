@@ -1,0 +1,83 @@
+# Build Folders
+bin/
+obj/
+out/
+
+# User-Specific Files
+*.user
+*.rsuser
+*.suo
+*.userosscache
+*.userprefs
+
+# IDE-Specific Files
+.idea/
+.vscode/
+.vscode-test/
+*.code-workspace
+*.sln.ide
+*.sln.docstates
+*.sln.suo
+
+# Visual Studio
+.vs/
+
+# Rider
+.idea/
+*.sln.iml
+
+# Logs
+*.log
+*.tlog
+*.trace
+
+# Build Artifacts
+*.dll
+*.exe
+*.app
+*.apk
+*.o
+*.pdb
+*.ilk
+*.idb
+
+# Temporary Files
+*.tmp
+*.temp
+~$*
+
+# Generated Files
+*.csproj.user
+*.csproj.transient
+*.csproj.FileListAbsolute.txt
+
+# NuGet
+*.nupkg
+packages/
+.nuget/
+project.lock.json
+project.fragment.lock.json
+
+# By-Products
+.DS_Store
+Thumbs.db
+*.db
+*.sqlite
+
+# Generated Doc Files
+*.docstates
+*.xml
+
+# Deployment
+.publish/
+*.deployprops
+*.pubxml
+
+# DotNet Coverage Tools
+*.opencover.xml
+*.coverage
+*.coveragexml
+
+# JetBrains Rider & ReSharper
+_ReSharper.Caches/
+*.resharper
