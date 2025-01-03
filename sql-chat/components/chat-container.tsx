@@ -25,7 +25,7 @@ export const ChatContainer = ({ resetKey }: { resetKey: number }) => {
 
     try {
       const response = await sendMessageAPI("/Chat/send", {
-        model: "phi3",
+        model: "meta-llama/Meta-Llama-3.1-8B-Instruct",
         userMessage: content,
       });
 
