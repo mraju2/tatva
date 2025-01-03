@@ -1,0 +1,90 @@
+version: "3.9"
+
+services:
+  nginx:
+    build:
+      context: ./nginx
+    ports:
+      - "8081:80" # Map port 8081 on the host to port 80 in the container
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/build:/usr/share/nginx/html:ro
+      - ./nginx/logs:/var/log/nginx
+    restart: always
+    depends_on:
+      - chatservice
+      - sqlchat
+    networks:
+      - app-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: sakila-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root_password
+      MYSQL_DATABASE: sakila
+      MYSQL_USER: sakila_user
+      MYSQL_PASSWORD: sakila_password
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql-test/sakila-mv-schema.sql:/docker-entrypoint-initdb.d/1_sakila-schema.sql
+      - ./mysql-test/sakila-mv-data.sql:/docker-entrypoint-initdb.d/2_sakila-data.sql
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - app-network
+
+  adminer:
+    image: adminer
+    container_name: sakila-adminer
+    ports:
+      - "8070:8070"
+    depends_on:
+      - mysql
+    networks:
+      - app-network
+
+  chatservice:
+    build:
+      context: ./ChatService # Path to ChatService Dockerfile
+      dockerfile: Dockerfile
+    container_name: chatservice
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+    ports:
+      - "5002:8080"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+  sqlchat:
+    build:
+      context: ./sql-chat # Path to sql-chat Dockerfile
+      dockerfile: Dockerfile
+    container_name: sqlchat
+    environment:
+      NODE_ENV: production
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - app-network
+
+volumes:
+  mysql_data: # Persistent volume for MySQL data
+
+networks:
+  app-network:
+    driver: bridge
