@@ -142,6 +142,7 @@ Provide a corrected query with **Start** and **End** markers."
                 var requestContent = new StringContent(requestBody, Encoding.UTF8, "application/json");
 
                 _logger.LogInformation("Sending request to LLM endpoint...");
+                _httpClient.Timeout = TimeSpan.FromMinutes(5); // Increase timeout to 5 minutes
                 var response = await _httpClient.PostAsync("http://159.223.173.153:11434/api/chat", requestContent);
 
                 if (!response.IsSuccessStatusCode)
