@@ -58,12 +58,11 @@ namespace ChatService.Services
                 _logger.LogInformation("System prompt loaded successfully.");
 
                 var messages = new List<LLMMessage>
-                {
-                    new LLMMessage { Role = "system", Content = systemMessageContent },
-                    new LLMMessage { Role = "user", Content = request.UserMessage }
-                };
+        {
+            new LLMMessage { Role = "system", Content = systemMessageContent },
+            new LLMMessage { Role = "user", Content = request.UserMessage }
+        };
 
-                string sqlQuery = string.Empty;
                 Exception lastException = null;
 
                 for (int retryCount = 0; retryCount < MAX_RETRIES; retryCount++)
@@ -78,15 +77,18 @@ namespace ChatService.Services
                         };
 
                         _logger.LogInformation("Sending request to LLM endpoint. Attempt {Attempt}", retryCount + 1);
-                        var initialResponse = await SendChatRequestToEndpointAsync(chatRequest);
-                        chatHistory.LLMResponse = initialResponse.Message.Content;
+                        var completionResponse = await SendDeepInfraChatRequestAsync(chatRequest);
+                        var completionMessage = completionResponse.Choices.FirstOrDefault()?.Message;
 
-                        _logger.LogInformation("Received response from LLM endpoint: {Content}", initialResponse.Message.Content);
+                        if (completionMessage == null)
+                            throw new Exception("No message content received from the LLM.");
 
+                        _logger.LogInformation("Received response from LLM endpoint: {Content}", completionMessage.Content);
+
+                        // Extract SQL Query
                         _logger.LogInformation("Extracting SQL query from LLM response...");
-                        sqlQuery = ExtractSqlQuery(initialResponse.Message.Content);
+                        var sqlQuery = ExtractSqlQuery(completionMessage.Content);
                         chatHistory.SqlQuery = sqlQuery;
-                        initialResponse.SqlQuery = sqlQuery;
 
                         _logger.LogInformation("Executing SQL query against the database...");
                         var queryResults = await _databaseRepository.ExecuteQueryAsync(sqlQuery);
@@ -96,12 +98,22 @@ namespace ChatService.Services
                         chatHistory.QueryResults = markdownResults;
                         chatHistory.IsSuccessful = true;
 
+                        // Save chat history
                         await _mongoRepository.SaveChatHistoryAsync(chatHistory);
 
-                        _logger.LogInformation("Returning formatted markdown results.");
-                        initialResponse.Message.Content = markdownResults;
+                        // Prepare final LLMResponse
+                        var llmResponse = new LLMResponse
+                        {
+                            Message = new LLMMessage
+                            {
+                                Role = completionMessage.Role,
+                                Content = markdownResults
+                            },
+                            SqlQuery = sqlQuery
+                        };
 
-                        return initialResponse;
+                        _logger.LogInformation("Returning formatted markdown results.");
+                        return llmResponse;
                     }
                     catch (Exception retryException)
                     {
@@ -116,7 +128,6 @@ namespace ChatService.Services
                             Role = "user",
                             Content = $@"The previous SQL query resulted in an error. Please correct the query based on the following details:
 Error: {retryException.Message}
-Previous query: {sqlQuery}
 
 Provide a corrected query with **Start** and **End** markers."
                         });
@@ -133,6 +144,7 @@ Provide a corrected query with **Start** and **End** markers."
                 throw;
             }
         }
+
 
         private async Task<LLMResponse> SendChatRequestToEndpointAsync(OllamaChatRequest chatRequest)
         {
@@ -160,6 +172,83 @@ Provide a corrected query with **Start** and **End** markers."
                 throw;
             }
         }
+
+        private async Task<ChatCompletionResponse> SendDeepInfraChatRequestAsync(OllamaChatRequest chatRequest)
+        {
+            try
+            {
+                _logger.LogInformation("Preparing request for DeepInfra API...");
+
+                using var deepInfraClient = new HttpClient
+                {
+                    Timeout = TimeSpan.FromMinutes(2) // Ensure a reasonable timeout for long requests
+                };
+
+                // Add Authorization Header
+                deepInfraClient.DefaultRequestHeaders.Add("Authorization", "Bearer rmvl9PfP6bgX1XE64Lr3udKBXMt3iKJq");
+
+                // Prepare the request content
+                var deepInfraRequestContent = new StringContent(JsonSerializer.Serialize(new
+                {
+                    model = chatRequest.Model,
+                    messages = chatRequest.Messages.Select(m => new
+                    {
+                        role = m.Role,
+                        content = m.Content
+                    })
+                }), Encoding.UTF8, "application/json");
+
+                _logger.LogInformation("Sending request to DeepInfra endpoint...");
+
+                // Send the POST request
+                var response = await deepInfraClient.PostAsync("https://api.deepinfra.com/v1/openai/chat/completions", deepInfraRequestContent);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    var errorMessage = await response.Content.ReadAsStringAsync();
+                    _logger.LogError("DeepInfra API call failed with status code {StatusCode}: {ErrorMessage}", response.StatusCode, errorMessage);
+                    throw new HttpRequestException($"DeepInfra API call failed: {response.StatusCode} - {errorMessage}");
+                }
+
+                // Read and log the response content
+                var responseContent = await response.Content.ReadAsStringAsync();
+                _logger.LogInformation("Raw Response from DeepInfra: {ResponseContent}", responseContent);
+
+                // Deserialize the response into ChatCompletionResponse
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true // Handles camelCase JSON properties
+                };
+
+                var chatCompletionResponse = JsonSerializer.Deserialize<ChatCompletionResponse>(responseContent, options);
+
+                if (chatCompletionResponse == null)
+                {
+                    throw new Exception("Invalid response from DeepInfra API: Deserialization resulted in null.");
+                }
+
+                _logger.LogInformation("Deserialized Response: {@ChatCompletionResponse}", chatCompletionResponse);
+
+                return chatCompletionResponse;
+            }
+            catch (HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP error occurred while communicating with DeepInfra API.");
+                throw;
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "JSON deserialization error occurred.");
+                throw;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An unexpected error occurred while sending chat request to DeepInfra endpoint.");
+                throw;
+            }
+        }
+
+
 
         private string ExtractSqlQuery(string messageContent)
         {
