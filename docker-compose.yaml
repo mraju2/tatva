@@ -10,6 +10,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/build:/usr/share/nginx/html:ro
       - ./nginx/logs:/var/log/nginx
+      - ./nginx/selfsigned.key:/etc/nginx/selfsigned.key
+      - ./nginx/selfsigned.crt:/etc/nginx/selfsigned.crt
     restart: always
     depends_on:
       - chatservice
