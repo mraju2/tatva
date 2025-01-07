@@ -10,8 +10,8 @@ services:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/build:/usr/share/nginx/html:ro
       - ./nginx/logs:/var/log/nginx
-      - ./nginx/selfsigned.key:/etc/nginx/selfsigned.key:ro
-      - ./nginx/selfsigned.crt:/etc/nginx/selfsigned.crt:ro
+      - /etc/letsencrypt/live/tryanna.xyz/fullchain.pem:/etc/nginx/ssl/fullchain.pem:ro
+      - /etc/letsencrypt/live/tryanna.xyz/privkey.pem:/etc/nginx/ssl/privkey.pem:ro
     restart: always
     depends_on:
       - chatservice
