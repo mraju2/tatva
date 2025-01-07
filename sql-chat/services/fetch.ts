@@ -9,7 +9,7 @@ type FetchServiceOptions = {
 
 type FetchServiceResponse<T> = T; // Generic response type for flexibility
 
-const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://139.59.88.197:8081/api';
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'https://api.tryanna.xyz/api/';
 
 const fetchService = async <T>({
   method,
