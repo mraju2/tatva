@@ -73,6 +73,8 @@ export const ChatContainer = ({ resetKey }: { resetKey: number }) => {
                 "Actor with most films?",
                 "Cumulative revenue of all stores?",
                 "What is the average running time of films by category?",
+                "Which actors have the last name Johansson?",
+                "Display the most frequently rented movies in descending order",
               ].map((sample, index) => (
                 <button
                   key={index}
