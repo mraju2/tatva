@@ -1,7 +1,3 @@
-Here's a **README** for your **Conversational Database POC**:
-
----
-
 # **Conversational Databases POC**  
 Convert natural language to SQL queries with LLMs  
 
